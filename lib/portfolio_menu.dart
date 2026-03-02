@@ -179,14 +179,22 @@ class _PortfolioCardState extends State<_PortfolioCard> {
       onExit: (_) => setState(() => _hovering = false),
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: () {
           Navigator.pushNamed(context, '/portfolio/${widget.entry.slug}');
         },
-        child: AnimatedContainer(
+        child: TweenAnimationBuilder<double>(
+          tween: Tween<double>(begin: 0.0, end: _hovering ? -4.0 : 0.0),
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeOutCubic,
-          transform: Matrix4.identity()
-            ..translateByDouble(0.0, _hovering ? -4.0 : 0.0, 0.0, 0.0),
+          builder: (context, yOffset, child) => Transform.translate(
+            offset: Offset(0, yOffset),
+            transformHitTests: false,
+            child: child!,
+          ),
+          child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutCubic,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             color: const Color(0xFF16161F),
@@ -276,6 +284,7 @@ class _PortfolioCardState extends State<_PortfolioCard> {
               ),
             ],
           ),
+        ),
         ),
       ),
     );

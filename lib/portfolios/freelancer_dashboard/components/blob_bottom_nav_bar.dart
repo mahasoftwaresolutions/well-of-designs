@@ -1,151 +1,199 @@
 import 'package:flutter/material.dart';
 import '../design_tokens.dart';
 
-/// Bottom navigation bar where the selected item has a raised circle
-/// that visually connects (merges) with the content above via a blob shape.
-class BlobBottomNavBar extends StatelessWidget {
+/// Fluid bottom nav bar matching the React FluidNavBar reference.
+/// The active icon lifts into a golden circle, and a coloured blob "drop"
+/// slides horizontally to sit behind it — coloured to match the active
+/// screen's bottom background, creating a seamless visual connection.
+class BlobBottomNavBar extends StatefulWidget {
   final int selectedIndex;
   final ValueChanged<int> onTap;
-  final int centerActionIndex;
+
+  /// Colour of the sliding blob drop — pass the bottom background colour of
+  /// the currently visible screen so the drop blends seamlessly.
+  final Color blobColor;
 
   const BlobBottomNavBar({
     super.key,
     required this.selectedIndex,
     required this.onTap,
-    this.centerActionIndex = 2,
+    this.blobColor = Colors.white,
   });
 
-  static const _icons = [
+  static const List<IconData> icons = [
     Icons.home_rounded,
     Icons.folder_rounded,
     Icons.bolt_rounded,
-    Icons.chat_bubble_outline_rounded,
+    Icons.account_balance_wallet_outlined,
     Icons.person_outline_rounded,
   ];
+
+  @override
+  State<BlobBottomNavBar> createState() => _BlobBottomNavBarState();
+}
+
+class _BlobBottomNavBarState extends State<BlobBottomNavBar>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _pos; // animated slot index (0.0 – 4.0)
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    final start = widget.selectedIndex.toDouble();
+    _pos = Tween<double>(begin: start, end: start)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOutCubic));
+  }
+
+  @override
+  void didUpdateWidget(BlobBottomNavBar old) {
+    super.didUpdateWidget(old);
+    if (old.selectedIndex != widget.selectedIndex) {
+      _pos = Tween<double>(
+        begin: _pos.value,
+        end: widget.selectedIndex.toDouble(),
+      ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOutCubic));
+      _ctrl.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: 80,
-      child: CustomPaint(
-        painter: _NavBarBlobPainter(
-          selectedIndex: selectedIndex,
-          centerIndex: centerActionIndex,
-          backgroundColor: FDTokens.creamLight,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: List.generate(_icons.length, (i) {
-            final isCenter = i == centerActionIndex;
-            final isSelected = i == selectedIndex;
-
-            if (isCenter) {
-              return _buildCenterButton(i);
-            }
-
-            return GestureDetector(
-              onTap: () => onTap(i),
-              behavior: HitTestBehavior.opaque,
-              child: SizedBox(
-                width: 48,
-                height: 48,
-                child: Icon(
-                  _icons[i],
-                  size: 24,
-                  color: isSelected
-                      ? FDTokens.textPrimary
-                      : FDTokens.textSecondary,
+      child: LayoutBuilder(builder: (context, constraints) {
+        final slotW = constraints.maxWidth / 5;
+        return AnimatedBuilder(
+          animation: _pos,
+          builder: (_, _) => Stack(
+            clipBehavior: Clip.none,
+            children: [
+              // Navbar background + sliding blob shape
+              CustomPaint(
+                size: Size(constraints.maxWidth, 80),
+                painter: _BlobPainter(
+                  blobPos: _pos.value,
+                  slotWidth: slotW,
+                  blobColor: widget.blobColor,
+                  bgColor: FDTokens.creamLight,
                 ),
               ),
-            );
-          }),
-        ),
-      ),
-    );
-  }
 
-  Widget _buildCenterButton(int index) {
-    return GestureDetector(
-      onTap: () => onTap(index),
-      child: Container(
-        width: 52,
-        height: 52,
-        decoration: BoxDecoration(
-          color: FDTokens.golden,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: FDTokens.golden.withAlpha(80),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Icon(_icons[index], size: 26, color: FDTokens.dark),
-      ),
+              // Icons row
+              Row(
+                children: List.generate(5, (i) {
+                  final isActive = i == widget.selectedIndex;
+                  return GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => widget.onTap(i),
+                    child: SizedBox(
+                      width: slotW,
+                      height: 80,
+                      child: Center(
+                        child: TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0.0, end: isActive ? 1.0 : 0.0),
+                          duration: const Duration(milliseconds: 400),
+                          curve: Curves.easeInOutCubic,
+                          builder: (_, t, _) => Transform.translate(
+                            offset: Offset(0, -25 * t),
+                            transformHitTests: false,
+                            child: Container(
+                              width: 46,
+                              height: 46,
+                              decoration: BoxDecoration(
+                                color: Color.lerp(
+                                    Colors.transparent, FDTokens.golden, t),
+                                shape: BoxShape.circle,
+                                boxShadow: t > 0.05
+                                    ? [
+                                        BoxShadow(
+                                          color: FDTokens.golden
+                                              .withAlpha((60 * t).round()),
+                                          blurRadius: 12,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: Icon(
+                                BlobBottomNavBar.icons[i],
+                                size: 22,
+                                color: Color.lerp(
+                                    FDTokens.textSecondary, FDTokens.dark, t),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ],
+          ),
+        );
+      }),
     );
   }
 }
 
-class _NavBarBlobPainter extends CustomPainter {
-  final int selectedIndex;
-  final int centerIndex;
-  final Color backgroundColor;
+class _BlobPainter extends CustomPainter {
+  final double blobPos; // 0.0 – 4.0 (animated)
+  final double slotWidth;
+  final Color blobColor;
+  final Color bgColor;
 
-  _NavBarBlobPainter({
-    required this.selectedIndex,
-    required this.centerIndex,
-    required this.backgroundColor,
+  _BlobPainter({
+    required this.blobPos,
+    required this.slotWidth,
+    required this.blobColor,
+    required this.bgColor,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = backgroundColor
-      ..style = PaintingStyle.fill;
-
-    final path = Path();
-    const topRadius = 20.0;
-    const centerNotchRadius = 32.0;
-
-    // Calculate center FAB position
-    final centerX = size.width / 2;
-    final notchTop = 4.0;
-
-    path.moveTo(0, topRadius);
-    path.quadraticBezierTo(0, 0, topRadius, 0);
-
-    // Curve up to the center notch
-    final notchLeft = centerX - centerNotchRadius - 8;
-    final notchRight = centerX + centerNotchRadius + 8;
-
-    path.lineTo(notchLeft, 0);
-    // Scoop up around the center FAB
-    path.quadraticBezierTo(
-      centerX - centerNotchRadius + 4,
-      0,
-      centerX - centerNotchRadius + 8,
-      -notchTop - 6,
+    // Fill navbar background
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      Paint()..color = bgColor,
     );
-    path.quadraticBezierTo(
-      centerX,
-      -notchTop - 18,
-      centerX + centerNotchRadius - 8,
-      -notchTop - 6,
+
+    // Blob "U-drop" shape centred on the active slot
+    final cx = (blobPos + 0.5) * slotWidth;
+    const hw = 36.0; // half-width of the drop body
+    const dh = 54.0; // total drop height
+    const br = 36.0; // bottom radius (= hw → full half-circle base)
+    const cr = 18.0; // concave corner radius at top edges
+
+    final path = Path()
+      ..moveTo(cx - hw - cr, 0)
+      ..quadraticBezierTo(cx - hw, 0, cx - hw, cr) // left concave corner
+      ..lineTo(cx - hw, dh - br)
+      ..arcToPoint(Offset(cx + hw, dh - br),
+          radius: const Radius.circular(br), clockwise: false) // rounded base
+      ..lineTo(cx + hw, cr)
+      ..quadraticBezierTo(cx + hw, 0, cx + hw + cr, 0) // right concave corner
+      ..close();
+
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = blobColor
+        ..style = PaintingStyle.fill,
     );
-    path.quadraticBezierTo(centerX + centerNotchRadius - 4, 0, notchRight, 0);
-
-    path.lineTo(size.width - topRadius, 0);
-    path.quadraticBezierTo(size.width, 0, size.width, topRadius);
-    path.lineTo(size.width, size.height);
-    path.lineTo(0, size.height);
-    path.close();
-
-    canvas.drawPath(path, paint);
   }
 
   @override
-  bool shouldRepaint(covariant _NavBarBlobPainter old) {
-    return old.selectedIndex != selectedIndex;
-  }
+  bool shouldRepaint(_BlobPainter old) =>
+      old.blobPos != blobPos || old.blobColor != blobColor;
 }
