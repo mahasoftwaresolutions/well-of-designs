@@ -1,67 +1,54 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../design_tokens.dart';
 
-/// A horizontal pill chip showing an icon + client name.
-/// Also supports an "add" variant for the + button.
+/// Client chip matching the React reference (on dark #222327 background).
+/// Add variant: circular bg-white/10, + icon.
+/// Named variant: pill bg-white/5, border-white/10, white text, no icon.
 class ClientChip extends StatelessWidget {
   final String name;
-  final IconData icon;
   final bool isAdd;
 
   const ClientChip({
     super.key,
     required this.name,
-    this.icon = Icons.business_rounded,
     this.isAdd = false,
   });
 
-  const ClientChip.add({super.key}) : name = '', icon = Icons.add, isAdd = true;
+  const ClientChip.add({super.key})
+      : name = '',
+        isAdd = true;
 
   @override
   Widget build(BuildContext context) {
     if (isAdd) {
       return Container(
-        width: 44,
-        height: 44,
+        width: 40,
+        height: 40,
         decoration: BoxDecoration(
-          color: FDTokens.cream,
+          color: Colors.white.withAlpha(25), // bg-white/10
           shape: BoxShape.circle,
-          border: Border.all(color: FDTokens.border, width: 1),
         ),
-        child: const Icon(Icons.add, size: 20, color: FDTokens.textSecondary),
+        child: const Icon(Icons.add, size: 20, color: Colors.white),
       );
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: FDTokens.white,
-        borderRadius: BorderRadius.circular(FDTokens.radiusFull),
-        border: Border.all(color: FDTokens.border, width: 1),
+        color: Colors.white.withAlpha(13), // bg-white/5
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withAlpha(25)), // white/10
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              color: FDTokens.cream,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Icon(icon, size: 14, color: FDTokens.textSecondary),
+      child: Center(
+        child: Text(
+          name,
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.white,
           ),
-          const SizedBox(width: 8),
-          Text(
-            name,
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: FDTokens.textPrimary,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
