@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'portfolios/getting_started/page.dart';
 import 'portfolios/freelancer_dashboard/page.dart';
+import 'portfolios/pill_nav_bar/page.dart';
 
 class PortfolioEntry {
   final String title;
@@ -39,6 +40,15 @@ class PortfolioRegistry {
       accentColor: const Color(0xFFF2C94C),
       icon: Icons.bolt_rounded,
       pageBuilder: () => const FreelancerDashboardPage(),
+    ),
+    PortfolioEntry(
+      title: 'Pill Nav Bar',
+      description:
+          'Sliding pill navigation with expandable hexagon FAB and floating tooltip badge.',
+      slug: 'pill-nav-bar',
+      accentColor: const Color(0xFF5EC28E),
+      icon: Icons.navigation_rounded,
+      pageBuilder: () => const PillNavBarPage(),
     ),
   ];
 
