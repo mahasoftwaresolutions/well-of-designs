@@ -1,10 +1,11 @@
 import 'dart:ui';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'design_tokens.dart';
 import 'components/sliding_pill_nav.dart';
 import 'components/hex_fab.dart';
-import 'components/data_tooltip.dart';
+import 'components/fabby_nav_bar_with_tip.dart';
 
 class PillNavBarPage extends StatefulWidget {
   const PillNavBarPage({super.key});
@@ -48,8 +49,30 @@ class _PillNavBarPageState extends State<PillNavBarPage> {
     });
   }
 
+  bool get _isMobileDevice =>
+      defaultTargetPlatform == TargetPlatform.iOS ||
+      defaultTargetPlatform == TargetPlatform.android;
+
   @override
   Widget build(BuildContext context) {
+    final content = _PhoneContent(
+      activeTab: _activeTab,
+      isFabOpen: _isFabOpen,
+      lastAction: _lastAction,
+      tabs: _tabs,
+      fabActions: _fabActions,
+      onTabChanged: (id) => setState(() => _activeTab = id),
+      onFabToggle: () => setState(() => _isFabOpen = !_isFabOpen),
+      onFabAction: _handleFabAction,
+      onOverlayTap: () => setState(() => _isFabOpen = false),
+    );
+
+    if (_isMobileDevice) {
+      return Scaffold(
+        body: content,
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFE8E4E0),
       appBar: AppBar(
@@ -73,19 +96,7 @@ class _PillNavBarPageState extends State<PillNavBarPage> {
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 420),
-          child: _phoneFrame(
-            _PhoneContent(
-              activeTab: _activeTab,
-              isFabOpen: _isFabOpen,
-              lastAction: _lastAction,
-              tabs: _tabs,
-              fabActions: _fabActions,
-              onTabChanged: (id) => setState(() => _activeTab = id),
-              onFabToggle: () => setState(() => _isFabOpen = !_isFabOpen),
-              onFabAction: _handleFabAction,
-              onOverlayTap: () => setState(() => _isFabOpen = false),
-            ),
-          ),
+          child: _phoneFrame(content),
         ),
       ),
     );
@@ -194,45 +205,18 @@ class _PhoneContent extends StatelessWidget {
         Positioned(
           left: 0,
           right: 0,
-          bottom: 32, // bottom-8 = 32px
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Tooltip above the nav bar, aligned to the right side
-              // Only visible when Data tab is active
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12, right: 16),
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: Padding(
-                    // Offset to align tooltip roughly above the Data tab area
-                    padding: const EdgeInsets.only(right: 60),
-                    child: DataTooltip(visible: activeTab == 'Data'),
-                  ),
-                ),
-              ),
-
-              // Nav bar row: pill nav + FAB
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  SlidingPillNav(
-                    tabs: tabs,
-                    activeTabId: activeTab,
-                    onTabChanged: onTabChanged,
-                  ),
-                  const SizedBox(width: PNBTokens.navGap),
-                  HexFab(
-                    isOpen: isFabOpen,
-                    onToggle: onFabToggle,
-                    actions: fabActions,
-                    onActionTap: onFabAction,
-                  ),
-                ],
-              ),
-            ],
+          bottom: 32 + MediaQuery.of(context).padding.bottom,
+          child: Center(
+            child: FabbyNavBarWithTip(
+              tabs: tabs,
+              activeTabId: activeTab,
+              onTabChanged: onTabChanged,
+              isFabOpen: isFabOpen,
+              onFabToggle: onFabToggle,
+              fabActions: fabActions,
+              onFabAction: onFabAction,
+              tooltipTabId: activeTab == 'Data' ? 'Data' : null,
+            ),
           ),
         ),
       ],

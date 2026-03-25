@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'design_tokens.dart';
 import 'dashboard_screen.dart';
@@ -23,10 +24,53 @@ class _FreelancerDashboardPageState extends State<FreelancerDashboardPage> {
     return Colors.white; // Dashboard white bottom
   }
 
+  bool get _isMobileDevice =>
+      defaultTargetPlatform == TargetPlatform.iOS ||
+      defaultTargetPlatform == TargetPlatform.android;
+
   @override
   Widget build(BuildContext context) {
+    if (_isMobileDevice) return _buildMobile();
     final isWide = MediaQuery.of(context).size.width >= 800;
     return isWide ? _buildSideBySide() : _buildSingleScreen();
+  }
+
+  // ── Native mobile mode (no phone frame, full screen) ─────────────────────
+
+  Widget _buildMobile() {
+    return Scaffold(
+      body: Column(
+        children: [
+          Expanded(
+            child: IndexedStack(
+              index: switch (_activeNav) {
+                2 => 0,
+                3 => 1,
+                _ => 2,
+              },
+              children: [
+                DashboardScreen(
+                  onPaymentsSeeAll: () => setState(() => _activeNav = 3),
+                ),
+                const PaymentsScreen(),
+                const ColoredBox(
+                  color: Colors.white,
+                  child: Center(
+                    child: Text('Coming soon',
+                        style: TextStyle(color: Colors.grey)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          BlobBottomNavBar(
+            selectedIndex: _activeNav,
+            onTap: (i) => setState(() => _activeNav = i),
+            blobColor: _blobColor,
+          ),
+        ],
+      ),
+    );
   }
 
   // ── Single-screen mode (mobile / narrow) ────────────────────────────────
