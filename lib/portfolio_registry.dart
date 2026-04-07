@@ -5,6 +5,7 @@ import 'portfolios/pill_nav_bar/page.dart';
 import 'portfolios/s_curved_tabs/page.dart';
 import 'portfolios/neumorphic_date_strip/page.dart';
 import 'portfolios/fitness_tracker/page.dart';
+import 'portfolios/flex_card/page.dart';
 
 class PortfolioEntry {
   final String title;
@@ -79,6 +80,15 @@ class PortfolioRegistry {
       accentColor: const Color(0xFFF58220),
       icon: Icons.fitness_center_rounded,
       pageBuilder: () => const FitnessTrackerPage(),
+    ),
+    PortfolioEntry(
+      title: 'Flex Card',
+      description:
+          'Project management card with neon lime cutout shape, progress bar, and action buttons.',
+      slug: 'flex-card',
+      accentColor: const Color(0xFFDEFA39),
+      icon: Icons.dashboard_customize_rounded,
+      pageBuilder: () => const FlexCardPage(),
     ),
   ];
 
